@@ -5,19 +5,7 @@ pipeline {
         maven 'M3'
     }
 
-    environment {
-        NEXUS_URL        = "http://host.docker.internal:8081"
-        NEXUS_REPOSITORY = "spring-boot-jars"
-        NEXUS_CREDENTIAL = "nexus-creds"
-
-        ARTIFACT_ID      = "springboot-hello-vinny"
-        VERSION          = "1.0.0"
-    }
-
     stages {
-
-        // Jenkins already did "Declarative: Checkout SCM" before this
-
         stage('Build Jar') {
             steps {
                 sh 'mvn -B clean package'
@@ -27,16 +15,15 @@ pipeline {
         stage('Upload to Nexus') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: env.NEXUS_CREDENTIAL,
+                    credentialsId: 'nexus-creds',
                     usernameVariable: 'NEXUS_USER',
                     passwordVariable: 'NEXUS_PASS'
                 )]) {
-                    // We know Maven produced target/demo-0.0.1-SNAPSHOT.jar
-                    sh """
-                        curl -v -u $NEXUS_USER:$NEXUS_PASS \
+                    sh '''
+                        curl -v -u "$NEXUS_USER:$NEXUS_PASS" \
                           --upload-file target/demo-0.0.1-SNAPSHOT.jar \
-                          "$NEXUS_URL/repository/$NEXUS_REPOSITORY/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-$VERSION.jar"
-                    """
+                          "http://host.docker.internal:8081/repository/spring-boot-jars/springboot-hello-vinny/1.0.0/springboot-hello-vinny-1.0.0.jar"
+                    '''
                 }
             }
         }
