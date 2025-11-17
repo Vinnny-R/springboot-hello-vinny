@@ -19,11 +19,12 @@ pipeline {
         // Jenkins already does the "Declarative: Checkout SCM" automatically
         // so we don't need a manual git stage.
 
-        stage('Build Jar') {
-            steps {
-                sh './mvnw -B clean package'
-            }
-        }
+       stage('Build Jar') {
+    steps {
+        sh 'mvn -B clean package'
+    }
+}
+
 
         stage('Upload to Nexus') {
             steps {
