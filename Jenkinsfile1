@@ -17,7 +17,7 @@ pipeline {
 
     stages {
 
-        // Checkout is already done by Jenkins (Declarative: Checkout SCM)
+        // Checkout is already handled by Declarative: Checkout SCM
 
         stage('Build Jar') {
             steps {
