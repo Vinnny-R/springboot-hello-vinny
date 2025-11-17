@@ -1,0 +1,61 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'M3'
+    }
+
+    environment {
+        // Jenkins runs inside Docker, Nexus is on the host
+        NEXUS_URL        = "http://host.docker.internal:8081"
+        NEXUS_REPOSITORY = "spring-boot-jars"
+        NEXUS_CREDENTIAL = "nexus-creds"
+        GROUP_ID         = "com.example"
+        ARTIFACT_ID      = "springboot-hello-vinny"
+        VERSION          = "1.0.0"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Vinnyy-R/springboot-hello-vinny.git'
+            }
+        }
+
+        stage('Build Jar') {
+            steps {
+                sh 'mvn -B clean package'
+            }
+        }
+
+        stage('Upload to Nexus') {
+            steps {
+                script {
+                    def jarFile = sh(
+                        script: "ls target/*.jar | head -n 1",
+                        returnStdout: true
+                    ).trim()
+
+                    withCredentials([usernamePassword(
+                        credentialsId: env.NEXUS_CREDENTIAL,
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )]) {
+                        sh """
+                            curl -v -u $NEXUS_USER:$NEXUS_PASS \
+                                --upload-file ${jarFile} \
+                                "$NEXUS_URL/repository/$NEXUS_REPOSITORY/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-$VERSION.jar"
+                        """
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+        }
+    }
+}
