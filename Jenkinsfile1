@@ -17,11 +17,7 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Vinnyy-R/springboot-hello-vinny.git'
-            }
-        }
+        
 
         stage('Build Jar') {
             steps {
