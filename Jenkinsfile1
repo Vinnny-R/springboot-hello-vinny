@@ -16,38 +16,28 @@ pipeline {
     }
 
     stages {
-        // Jenkins already does the "Declarative: Checkout SCM" automatically
-        // so we don't need a manual git stage.
 
-       stage('Build Jar') {
-    steps {
-        sh 'mvn -B clean package'
-    }
-}
+        // Checkout is already done by Jenkins (Declarative: Checkout SCM)
 
+        stage('Build Jar') {
+            steps {
+                sh 'mvn -B clean package'
+            }
+        }
 
         stage('Upload to Nexus') {
             steps {
-                script {
-                    // pick the first jar in target/
-                    def jarFile = sh(
-                        script: "ls target/*.jar | head -n 1",
-                        returnStdout: true
-                    ).trim()
-
-                    echo "Uploading ${jarFile} to Nexus..."
-
-                    withCredentials([usernamePassword(
-                        credentialsId: env.NEXUS_CREDENTIAL,
-                        usernameVariable: 'NEXUS_USER',
-                        passwordVariable: 'NEXUS_PASS'
-                    )]) {
-                        sh """
-                            curl -v -u $NEXUS_USER:$NEXUS_PASS \
-                              --upload-file "${jarFile}" \
-                              "$NEXUS_URL/repository/$NEXUS_REPOSITORY/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-$VERSION.jar"
-                        """
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: env.NEXUS_CREDENTIAL,
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    // We KNOW Maven produced: target/demo-0.0.1-SNAPSHOT.jar
+                    sh """
+                        curl -v -u $NEXUS_USER:$NEXUS_PASS \
+                          --upload-file target/demo-0.0.1-SNAPSHOT.jar \
+                          "$NEXUS_URL/repository/$NEXUS_REPOSITORY/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-$VERSION.jar"
+                    """
                 }
             }
         }
